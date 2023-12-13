@@ -1,0 +1,13 @@
+# Python-specific
+*.pyc
+*.pyo
+__pycache__/
+
+# pytest cache
+.pytest_cache/
+
+# Visual Studio Code
+.vscode/
+
+# Database file
+database.db

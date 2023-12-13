@@ -1,0 +1,59 @@
+name: Python CI/CD
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./api
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.9"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pipenv 
+          pipenv install --system --deploy
+
+      - name: Run pytest
+        id: pytest
+        run: |
+          pytest --continue-on-collection-errors
+
+      - name: Deploy if tests pass
+        if: ${{steps.pytest.outcome == 'success' }}
+        run: |
+          echo "Tests passed, triggering deployment..."
+
+  bild_and_push:
+    runs-on: ubuntu-latest
+
+    needs: prepare
+    if: ${{ needs.prepare.result == 'success' }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Build and push
+        uses: mr-smithers-excellent/docker-build-push@v6
+        with:
+          image: hamedsaadati29/devops_repo
+          registry: docker.io
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+          directory: ./api
+          dockerfile: ./api/Dockerfile
+          tags: v1
